@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  
+  <?!= include('Scanner_View_CSS'); ?>
+</head>
+<body class="bg-[#020617] text-white overflow-hidden">
+
+<audio id="silent-audio" loop>
+  <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTSVMAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//oeAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw//oeAAAAAAAAAAAAAAAAAAAAAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAAAAAAAAAAAAACCAAAAAAAAAAAAAA//4QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//4QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" type="audio/mpeg">
+</audio>
+
+<div id="sipgtk-root">
+  
+  <canvas id="particle-canvas"></canvas>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div id="screensaver" class="screensaver-v hide">
+    <div id="saver-content">
+      <div id="saver-logo">SIPGTK<span>.PRO</span></div>
+      <div class="saver-subtitle">
+        Sistem Informasi Presensi Guru dan Tenaga Kependidikan<br>
+        <span id="saver-school-name" style="font-weight: 800; color: #fff;">...</span>
+      </div>
+      <div class="saver-prompt">
+        <div style="font-weight:800; font-size:clamp(14px, 1.5vw, 16px); letter-spacing:1px; color: var(--accent); animation: pulse 2s infinite;">SISTEM SIAP MEMINDAI</div>
+        <div style="font-size: 10px; font-weight: 600; color: #94a3b8; margin-top: 5px;">Tunjukan Kartu QR ke mesin</div>
+      </div>
+    </div>
+  </div>
+  <div id="unlock-v" class="overlay-v">
+    <div>
+      <div class="unlock-btn">🔘</div>
+      <h2 style="font-weight:800; letter-spacing:2px; font-size: clamp(18px, 4vw, 24px);">INITIALIZE SCANNER</h2>
+      <p style="color:#64748b; font-weight:700; text-transform: uppercase; font-size: clamp(10px, 2vw, 12px); letter-spacing: 1px;">
+        Klik untuk mengaktifkan<br>
+        <span style="font-size: clamp(10px, 1.2vw, 12px); display:block; color:#94a3b8; font-family:'Plus Jakarta Sans'; margin-top:8px; line-height: 1.5;">
+          Sistem Informasi Presensi Guru dan Tenaga Kependidikan<br>
+          <span id="unlock-school-name" style="color:var(--accent); font-weight:800; font-size: clamp(12px, 1.5vw, 14px);">Memuat data instansi...</span>
+        </span>
+      </p>
+    </div>
+  </div>
+  <header>
+    <div class="brand" onclick="login()"><h1>SIPGTK<span>.PRO</span></h1></div>
+    <div class="clock-box">
+      <div id="sync-badge">🔄 0 PENDING</div>
+      <div>
+        <div id="jam-v">00:00:00</div>
+        <div id="tgl-v">...</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="ticker-v"><div class="ticker-content-v" id="ticker-text-v">Sistem Terkoneksi. Menunggu aktivitas pemindaian untuk hari ini...</div></div>
+
+  <main>
+    <aside class="sidebar-v">
+      <div class="cam-wrapper active" id="cam-box-v">
+        <div class="scanner-line"></div>
+        <div id="flash-v" class="flash-overlay"></div>
+        <video id="video-v" autoplay muted playsinline></video>
+        <canvas id="canvas-v" width="320" height="240" style="display:none"></canvas>
+        <div class="pause-msg" onclick="refocusInput()">
+          <div class="pause-content">
+            <div style="font-size:35px">🚫</div>
+            <div style="font-size:16px; font-weight:800; color:#ef4444; margin-top:5px; letter-spacing:1px">SCANNER OFF</div>
+            <div style="font-size:10px; color:#94a3b8; margin-top:5px">Klik di sini untuk aktifkan kembali</div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="res-box-v" class="res-v">
+        <div style="font-size:30px; margin-bottom: 5px;">📡</div>
+        <div style="font-weight:800; font-size:clamp(14px, 1.5vw, 16px); letter-spacing:1px; color: var(--accent);">SISTEM SIAP MEMINDAI<br><span style="font-size: 10px; font-weight: 600; color: #94a3b8;">Tunjukan Kartu QR ke mesin</span></div>
+        <div id="mode-v" style="margin-top:8px; padding:5px 12px; border-radius:15px; font-size:9px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; display:inline-block; background:#1e293b; color:#fff;">—</div>
+      </div>
+      
+      <div class="stats-v">
+        <div class="st-card"><div id="s-masuk" class="st-val" style="color:var(--success)">0</div><div class="st-label">MASUK</div></div>
+        <div class="st-card"><div id="s-izin" class="st-val" style="color:var(--accent)">0</div><div class="st-label">IZIN</div></div>
+        <div class="st-card"><div id="s-sakit" class="st-val" style="color:var(--danger)">0</div><div class="st-label">SAKIT</div></div>
+        <div class="st-card"><div id="s-pulang" class="st-val" style="color:var(--warning)">0</div><div class="st-label">PULANG</div></div>
+        <div class="st-card" style="grid-column: span 2;"><div id="s-lembur" class="st-val" style="color:var(--purple)">0</div><div class="st-label">LEMBUR</div></div>
+      </div>
+  
+      <div id="award-v" class="award-v">
+        <img id="award-img" src="" class="award-img">
+        <div class="award-info">
+          <div class="award-title">🏆 EARLY BIRD</div>
+          <div id="award-name" class="award-name">-</div>
+        </div>
+      </div>
+
+      <input type="text" id="scanner-input" autocomplete="off" autofocus>
+    </aside>
+    <section class="gallery-v">
+      <div class="section-header">
+        <h2>Aktivitas Hari Ini</h2>
+        <span id="total-count-v" style="background:var(--primary); padding:8px 18px; border-radius:50px; font-size:10px; font-weight:800; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">0 REKAMAN</span>
+      </div>
+      <div id="list-v" class="grid-v"></div>
+    </section>
+  </main>
+  
+  <div id="toast-container"></div>
+  <div class="quote-v" id="quote-box-v">
+    <span>💡</span>
+    <div id="quote-text">"Seorang guru menggandeng tangan, membuka pikiran, dan menyentuh hati."</div>
+  </div>
+
+  <div id="gamification-v" class="gami-overlay">
+    <div class="gami-card">
+      <img id="gami-img" src="" class="gami-img">
+      <h2 id="gami-title" class="gami-title">🏆 EARLY BIRD</h2>
+      <p id="gami-name" class="gami-name">Nama Guru</p>
+      <p id="gami-sub" class="gami-sub">Apresiasi untuk semangat hari ini!</p>
+    </div>
+  </div>
+</div>
+
+<?!= include('Scanner_View_JS'); ?>
+</body>
+</html>

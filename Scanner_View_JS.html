@@ -1,0 +1,911 @@
+
+<script>
+  function showToast(msg, type) {
+    var container = document.getElementById("toast-container");
+    var toast = document.createElement("div");
+    toast.className = "toast-v";
+    
+    var color = type === 'success' ? 'var(--success)' : (type === 'error' ? 'var(--danger)' : (type === 'warning' ? 'var(--warning)' : 'var(--accent)'));
+    var icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : (type === 'warning' ? '⚠️' : '🔄'));
+    
+    toast.style.borderLeftColor = color;
+    toast.innerHTML = "<span style='font-size:16px'>" + icon + "</span> <span>" + msg + "</span>";
+    container.appendChild(toast);
+    
+    setTimeout(function() {
+      toast.classList.add("hide");
+      setTimeout(function() { toast.remove(); }, 400);
+    }, 4000); 
+  }
+
+  var quotesArray = [
+    "Seorang guru menggandeng tangan, membuka pikiran, dan menyentuh hati.",
+    "Pendidikan adalah senjata paling mematikan di dunia.",
+    "Guru yang baik itu seperti lilin, menghabiskan dirinya untuk menerangi jalan orang lain.",
+    "Mengajar adalah belajar dua kali.",
+    "Tugas pendidik bukanlah menebang hutan, tetapi mengairi gurun.",
+    "Hanya pendidikan yang bisa menyelamatkan masa depan.",
+    "Satu buku, satu pena, satu anak, dan satu guru dapat mengubah dunia.",
+    "Guru hebat bisa menginspirasi harapan dan memantik imajinasi."
+  ];
+  var quoteIndex = 0;
+  
+  setInterval(function() {
+    var qText = document.getElementById("quote-text");
+    if(qText && !isProcessing) {
+      qText.style.opacity = 0;
+      setTimeout(function() {
+        quoteIndex = (quoteIndex + 1) % quotesArray.length;
+        qText.innerText = '"' + quotesArray[quoteIndex] + '"';
+        qText.style.opacity = 1;
+      }, 500);
+    }
+  }, 15000); 
+
+  var pCanvas = document.getElementById("particle-canvas");
+  var pCtx = pCanvas.getContext("2d");
+  var particlesArray = [];
+  var pWidth, pHeight;
+
+  function resizeCanvas() {
+    pWidth = pCanvas.width = window.innerWidth;
+    pHeight = pCanvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  function ParticleObj() {
+    this.x = Math.random() * pWidth;
+    this.y = Math.random() * pHeight;
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.vy = (Math.random() - 0.5) * 0.5;
+    this.radius = Math.random() * 1.5 + 0.5;
+  }
+
+  ParticleObj.prototype.update = function() {
+    this.x += this.vx;
+    this.y += this.vy;
+    if (this.x < 0 || this.x > pWidth) this.vx *= -1;
+    if (this.y < 0 || this.y > pHeight) this.vy *= -1;
+  };
+
+  ParticleObj.prototype.draw = function() {
+    pCtx.beginPath();
+    pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    pCtx.fillStyle = "rgba(6, 182, 212, 0.5)"; 
+    pCtx.fill();
+  };
+
+  for (var i = 0; i < 70; i++) {
+    particlesArray.push(new ParticleObj());
+  }
+
+  function animateParticles() {
+    pCtx.clearRect(0, 0, pWidth, pHeight);
+    for (var i = 0; i < particlesArray.length; i++) {
+      particlesArray[i].update();
+      particlesArray[i].draw();
+      for (var j = i + 1; j < particlesArray.length; j++) {
+        var dx = particlesArray[i].x - particlesArray[j].x;
+        var dy = particlesArray[i].y - particlesArray[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < 120) {
+          pCtx.beginPath();
+          pCtx.moveTo(particlesArray[i].x, particlesArray[i].y);
+          pCtx.lineTo(particlesArray[j].x, particlesArray[j].y);
+          var opacity = (1 - dist / 120) * 0.3;
+          pCtx.strokeStyle = "rgba(6, 182, 212, " + opacity + ")";
+          pCtx.lineWidth = 1;
+          pCtx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
+
+  // ===== CONFETTI ENGINE =====
+  var cCanvas = document.getElementById("confetti-canvas");
+  var cCtx = cCanvas.getContext("2d");
+  var confettis = [];
+  var confettiColors = ['#10b981', '#3b82f6', '#facc15', '#ef4444', '#a855f7'];
+  var isConfettiActive = false;
+
+  function resizeConfettiCanvas() {
+    cCanvas.width = window.innerWidth;
+    cCanvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeConfettiCanvas);
+  resizeConfettiCanvas();
+
+  function fireConfetti() {
+    confettis = [];
+    isConfettiActive = true;
+    for (var i = 0; i < 150; i++) {
+      confettis.push({
+        x: Math.random() * cCanvas.width,
+        y: Math.random() * -cCanvas.height, // Mulai dari atas luar layar
+        w: Math.random() * 10 + 5,
+        h: Math.random() * 10 + 5,
+        color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+        vx: (Math.random() - 0.5) * 6,
+        vy: Math.random() * 5 + 3,
+        rot: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 10
+      });
+    }
+    animateConfetti();
+  }
+
+  function animateConfetti() {
+    if (!isConfettiActive) return;
+    cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+    var activeCount = 0;
+    
+    for (var i = 0; i < confettis.length; i++) {
+      var p = confettis[i];
+      p.y += p.vy;
+      p.x += p.vx;
+      p.rot += p.rotSpeed;
+      
+      if (p.y < cCanvas.height) { activeCount++; }
+      
+      cCtx.save();
+      cCtx.translate(p.x + p.w / 2, p.y + p.h / 2);
+      cCtx.rotate(p.rot * Math.PI / 180);
+      cCtx.fillStyle = p.color;
+      cCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      cCtx.restore();
+    }
+    
+    if (activeCount > 0) { requestAnimationFrame(animateConfetti); } 
+    else { isConfettiActive = false; cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height); }
+  }
+
+  function triggerGamification(title, name, imgUrl, subtitle) {
+    var overlay = document.getElementById("gamification-v");
+    document.getElementById("gami-title").innerText = title;
+    document.getElementById("gami-name").innerText = name;
+    document.getElementById("gami-sub").innerText = subtitle || "Luar Biasa!";
+    
+    var imgEl = document.getElementById("gami-img");
+    imgEl.src = (imgUrl && imgUrl.length > 50) ? imgUrl : "https://ui-avatars.com/api/?name=" + name.charAt(0) + "&background=random&color=fff";
+    
+    overlay.classList.add("show");
+    fireConfetti();
+    playSFX('fanfare');
+
+    setTimeout(function() {
+      overlay.classList.remove("show");
+    }, 6000); // Overlay hilang dalam 6 detik
+  }
+  // ===========================
+
+  var normalTickerText = "Sistem Terkoneksi. Menunggu aktivitas pemindaian untuk hari ini...";
+  var windowDataSignature = ""; 
+  var lastScanCode = "";
+  var lastScanTime = 0;
+  var wakeLock = null;
+  var currentDay = new Date().getDate(); 
+  var isProcessing = false;
+  
+  var defaultStatusHTML = "<div style='font-size:30px; margin-bottom: 5px;'>📡</div>" +
+      "<div style='font-weight:800; font-size:clamp(14px, 1.5vw, 16px); letter-spacing:1px; color: var(--accent);'>SISTEM SIAP MEMINDAI<br><span style='font-size: 10px; font-weight: 600; color: #94a3b8;'>Tunjukan Kartu QR ke mesin</span></div>" +
+      "<div id='mode-v' style='margin-top:8px; padding:5px 12px; border-radius:15px; font-size:9px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; display:inline-block; background:#1e293b; color:#fff;'>—</div>";
+
+  var isBackgroundSyncing = false;
+
+  function updateSyncBadge() {
+    var pendingList = JSON.parse(localStorage.getItem('sipgtk_pending') || '[]');
+    var badge = document.getElementById('sync-badge');
+    var ticker = document.getElementById("ticker-text-v");
+
+    if (pendingList.length > 0) {
+      badge.style.display = 'block';
+      badge.innerText = "🔄 " + pendingList.length + " PENDING";
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (!navigator.onLine) {
+      badge.style.background = "var(--danger)";
+      badge.style.color = "#fff";
+      badge.innerText = "⚠️ OFFLINE (" + pendingList.length + ")";
+      if (ticker) ticker.innerText = "⚠️ KONEKSI TERPUTUS - BERJALAN DALAM MODE OFFLINE. SILAKAN LANJUTKAN PRESENSI. DATA AKAN DISIMPAN OTOMATIS. • ".repeat(3);
+    } else {
+      badge.style.background = "var(--warning)";
+      badge.style.color = "#020617";
+      if (ticker) ticker.innerText = (normalTickerText + " • ").repeat(5);
+    }
+  }
+
+  window.addEventListener('online', updateSyncBadge);
+  window.addEventListener('offline', updateSyncBadge);
+
+  function handleOfflineSave(nik, photo) {
+    isProcessing = false;
+    document.getElementById("quote-box-v").classList.remove("hidden"); 
+    playSFX('success'); 
+    
+    var pendingScans = JSON.parse(localStorage.getItem('sipgtk_pending') || '[]');
+    pendingScans.push({ nik: nik, photo: photo, time: Date.now() });
+    localStorage.setItem('sipgtk_pending', JSON.stringify(pendingScans));
+    
+    updateSyncBadge();
+    showToast("Koneksi gagal! Data Anda disimpan secara offline.", "warning"); 
+
+    var rb = document.getElementById("res-box-v");
+    rb.innerHTML = "<div style='color:var(--warning); font-size:14px; font-weight:800; padding: 10px;'>⚠ Tersimpan Offline<br><span style='font-size:10px; color:#fff; font-weight:500;'>Akan otomatis dikirim saat jaringan stabil</span></div>";
+    
+    speak("Data tersimpan offline.");
+    setTimeout(function() { rb.innerHTML = defaultStatusHTML; }, 3000);
+  }
+
+  function startBackgroundSync() {
+    setInterval(function() {
+      if (!navigator.onLine || isBackgroundSyncing) return;
+      
+      var pendingScans = JSON.parse(localStorage.getItem('sipgtk_pending') || '[]');
+      if (pendingScans.length === 0) return;
+
+      isBackgroundSyncing = true;
+      var dataToSync = pendingScans[0]; 
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          var updatedScans = JSON.parse(localStorage.getItem('sipgtk_pending') || '[]');
+          updatedScans.shift(); 
+          localStorage.setItem('sipgtk_pending', JSON.stringify(updatedScans));
+          
+          isBackgroundSyncing = false;
+          updateSyncBadge();
+          showToast("1 Data Offline berhasil dikirim ke server!", "success"); 
+          window.refreshUI(); 
+        })
+        .withFailureHandler(function(err) {
+          isBackgroundSyncing = false;
+        })
+        .simpanPresensi(dataToSync.nik, dataToSync.photo); 
+        
+    }, 10000); 
+  }
+
+  var audioCtx;
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playSFX(type) {
+    if (!audioCtx) return;
+    
+    var oscillator = audioCtx.createOscillator();
+    var gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    var now = audioCtx.currentTime;
+    
+    if (type === 'processing') {
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(2000, now);
+      oscillator.frequency.exponentialRampToValueAtTime(4000, now + 0.1);
+      gainNode.gain.setValueAtTime(0.05, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      oscillator.start(now);
+      oscillator.stop(now + 0.1);
+
+    } else if (type === 'success') {
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(600, now);
+      oscillator.frequency.setValueAtTime(900, now + 0.1);
+      gainNode.gain.setValueAtTime(0.3, now);
+      gainNode.gain.setValueAtTime(0.3, now + 0.1);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      oscillator.start(now);
+      oscillator.stop(now + 0.4);
+
+    } else if (type === 'error') {
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(150, now);
+      gainNode.gain.setValueAtTime(0.3, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      oscillator.start(now);
+      oscillator.stop(now + 0.4);
+
+    } else if (type === 'startup') {
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(300, now);
+      oscillator.frequency.exponentialRampToValueAtTime(1200, now + 0.5);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.2, now + 0.2);
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+      oscillator.start(now);
+      oscillator.stop(now + 0.5);
+
+    } else if (type === 'shutter') {
+      oscillator.type = 'triangle';
+      oscillator.frequency.setValueAtTime(2000, now);
+      oscillator.frequency.exponentialRampToValueAtTime(500, now + 0.05);
+      gainNode.gain.setValueAtTime(0.8, now);
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
+      oscillator.start(now);
+      oscillator.stop(now + 0.1);
+
+    } else if (type === 'fanfare') {
+      var freqs = [261.63, 329.63, 392.00, 523.25];
+      var startTime = now;
+      for (var i = 0; i < freqs.length; i++) {
+        var osc = audioCtx.createOscillator();
+        var gn = audioCtx.createGain();
+        osc.connect(gn);
+        gn.connect(audioCtx.destination);
+        osc.type = 'square';
+        osc.frequency.value = freqs[i];
+        
+        var d = (i === freqs.length - 1) ? 0.6 : 0.15; 
+        gn.gain.setValueAtTime(0.2, startTime);
+        gn.gain.exponentialRampToValueAtTime(0.01, startTime + d);
+        
+        osc.start(startTime);
+        osc.stop(startTime + d);
+        startTime += 0.15;
+      }
+    }
+  }
+
+  var idleTime = 0;
+  var isScreensaverActive = false;
+  var saverElem, saverContent;
+  var posX = 0, posY = 0, dirX = 1, dirY = 1, speed = 2; 
+  var IDLE_TIMEOUT_SECONDS = 120; 
+
+  function resetIdleTimer() {
+    idleTime = 0;
+    if (isScreensaverActive) {
+      isScreensaverActive = false;
+      saverElem.classList.add("hide");
+      document.getElementById("scanner-input").focus(); 
+    }
+  }
+
+  window.addEventListener('mousemove', resetIdleTimer);
+  window.addEventListener('keydown', resetIdleTimer);
+  window.addEventListener('touchstart', resetIdleTimer);
+  window.addEventListener('click', resetIdleTimer);
+
+  function startIdleTimer() {
+    saverElem = document.getElementById("screensaver");
+    saverContent = document.getElementById("saver-content"); 
+    
+    setInterval(function() {
+      idleTime++;
+      if (idleTime >= IDLE_TIMEOUT_SECONDS && !isScreensaverActive) {
+        isScreensaverActive = true;
+        saverElem.classList.remove("hide");
+      }
+    }, 1000);
+
+    requestAnimationFrame(animateScreensaver);
+  }
+
+  function animateScreensaver() {
+    if (isScreensaverActive && saverContent) {
+      var rect = saverElem.getBoundingClientRect();
+      var contentRect = saverContent.getBoundingClientRect();
+      
+      posX += speed * dirX;
+      posY += speed * dirY;
+      
+      if (posX <= 0 || posX + contentRect.width >= rect.width) dirX *= -1;
+      if (posY <= 0 || posY + contentRect.height >= rect.height) dirY *= -1;
+      
+      posX = Math.max(0, Math.min(posX, rect.width - contentRect.width));
+      posY = Math.max(0, Math.min(posY, rect.height - contentRect.height));
+
+      saverContent.style.transform = "translate(" + posX + "px, " + posY + "px)";
+    }
+    requestAnimationFrame(animateScreensaver);
+  }
+
+  function openFullscreen() {
+    var elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(function(err) { console.log(err); });
+    } else if (elem.webkitRequestFullscreen) { 
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { 
+      elem.msRequestFullscreen();
+    }
+  }
+
+  document.getElementById("unlock-v").addEventListener("click", function() {
+    openFullscreen();
+    initAudio(); 
+    playSFX('startup'); 
+    window.initSystem();
+  });
+
+  document.getElementById("award-img").addEventListener("error", function() {
+    this.src = "https://ui-avatars.com/api/?background=random&color=fff";
+  });
+
+  async function activateKeepAlive() {
+    try {
+      document.getElementById("silent-audio").play().catch(function(e) { console.log("Audio play failed"); });
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    } catch (err) { console.log(err); }
+  }
+
+  document.addEventListener("visibilitychange", async function() {
+    if (wakeLock !== null && document.visibilityState === "visible") {
+      if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    }
+  });
+
+  window.initSystem = function() {
+    var unlockScreen = document.getElementById("unlock-v");
+    unlockScreen.classList.add("hide"); 
+    
+    setTimeout(function() {
+      unlockScreen.style.display = "none";
+      showToast("Sistem Scanner berhasil diaktifkan!", "info"); 
+    }, 600);
+
+    var inp = document.getElementById("scanner-input");
+    var video = document.getElementById("video-v");
+    
+    activateKeepAlive();
+    updateSyncBadge(); 
+    startBackgroundSync(); 
+
+    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+      navigator.mediaDevices.getUserMedia({video:{width:320, height:240}}).then(function(s) { video.srcObject = s; }).catch(function(err) { alert("Gagal mengakses kamera."); });
+    }
+    
+    inp.focus();
+    checkFocus();
+
+    setInterval(function() { if(!document.hidden) inp.focus(); }, 1500);
+    document.body.addEventListener("click", function() { inp.focus(); activateKeepAlive(); });
+    
+    window.startCore();
+  };
+
+  var inputTrap = document.getElementById("scanner-input");
+  var camBox = document.getElementById("cam-box-v");
+
+  function checkFocus() {
+    if(document.activeElement === inputTrap) { 
+      camBox.classList.add("active"); camBox.classList.remove("inactive"); 
+    } else { 
+      camBox.classList.add("inactive"); camBox.classList.remove("active"); 
+    }
+  }
+
+  inputTrap.addEventListener("blur", function() {
+    checkFocus();
+    setTimeout(function() { checkFocus(); }, 100);
+  });
+  inputTrap.addEventListener("focus", function() { checkFocus(); });
+  window.refocusInput = function() { inputTrap.focus(); checkFocus(); };
+
+  function speak(txt) {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      var msg = new SpeechSynthesisUtterance(txt);
+      msg.lang = "id-ID";
+      window.speechSynthesis.speak(msg);
+    }
+  }
+
+  function getSapaanWaktu() {
+    var hour = new Date().getHours();
+    if (hour >= 4 && hour < 11) return "pagi";
+    if (hour >= 11 && hour < 15) return "siang";
+    if (hour >= 15 && hour < 18) return "sore";
+    return "malam";
+  }
+
+  function generateUcapanNatural(nama, mode, keterangan, status) {
+    var waktu = getSapaanWaktu();
+    var namaPanggilan = nama ? nama.split(" ")[0] : "Bapak Ibu";
+    
+    if (status === 'duplikat') {
+      var tplDup = [
+        "Halo " + namaPanggilan + ", kamu sudah absen ya.",
+        "Sistem mencatat kamu sudah presensi sebelumnya, " + namaPanggilan + ".",
+        "Sip! " + namaPanggilan + " kamu sudah absen."
+      ];
+      return tplDup[Math.floor(Math.random() * tplDup.length)];
+    }
+
+    if (status !== 'success') return "Maaf, data tidak ditemukan dalam sistem.";
+
+    mode = (mode || "").toLowerCase();
+    keterangan = (keterangan || "").toLowerCase();
+
+    if (mode.includes('masuk')) {
+      if (keterangan.includes('terlambat')) {
+        var tplInLate = [
+          "Selamat " + waktu + " " + namaPanggilan + ". Kamu tercatat terlambat hari ini.",
+          "Halo " + namaPanggilan + ". Mohon perhatikan waktu kehadiran besok ya.",
+          "Selamat " + waktu + " " + namaPanggilan + ". Besok usahakan datang lebih awal ya."
+        ];
+        return tplInLate[Math.floor(Math.random() * tplInLate.length)];
+      } else {
+        var tplIn = [
+          "Selamat " + waktu + " " + namaPanggilan + ", selamat beraktivitas!",
+          "Halo " + namaPanggilan + ", semangat untuk hari ini ya!",
+          "Terima kasih " + namaPanggilan + ", semoga harimu menyenangkan hari ini."
+        ];
+        return tplIn[Math.floor(Math.random() * tplIn.length)];
+      }
+    } else if (mode.includes('pulang')) {
+      if (keterangan.includes('cepat') || keterangan.includes('awal')) {
+        var tplOutEarly = [
+          "Halo " + namaPanggilan + ", kamu tercatat pulang lebih awal.",
+          "Hati-hati " + namaPanggilan + ", pastikan sudah konfirmasi izin ya.",
+          namaPanggilan + ", kamu pulang lebih cepat hari ini. Hati-hati di jalan."
+        ];
+        return tplOutEarly[Math.floor(Math.random() * tplOutEarly.length)];
+      } else {
+        var tplOut = [
+          "Terima kasih " + namaPanggilan + ", hati-hati di jalan pulang.",
+          "Kerja bagus hari ini " + namaPanggilan + ", selamat beristirahat.",
+          "Sampai jumpa besok " + namaPanggilan + ", hati-hati di jalan."
+        ];
+        return tplOut[Math.floor(Math.random() * tplOut.length)];
+      }
+    } else if (mode.includes('lembur')) {
+      var tplLembur = [
+        "Semangat lembur " + namaPanggilan + ", jangan lupa jaga kesehatan ya.",
+        "Terima kasih atas dedikasinya " + namaPanggilan + ".",
+        "Kerja keras yang luar biasa " + namaPanggilan + ", semangat lembur!"
+      ];
+      return tplLembur[Math.floor(Math.random() * tplLembur.length)];
+    }
+
+    return "Presensi berhasil, " + namaPanggilan + ".";
+  }
+
+  // ===== MENGAMBIL NAMA INSTANSI UNTUK LAYAR UNLOCK =====
+  google.script.run.withSuccessHandler(function(res) {
+    if(res && res.nama) {
+      var unlockName = document.getElementById("unlock-school-name");
+      if(unlockName) unlockName.innerText = res.nama;
+    }
+  }).withFailureHandler(function(err){ 
+    console.log("Gagal memuat nama instansi karena offline."); 
+  }).getPresensiScannerSettings();
+  // ========================================================
+
+  window.login = function() {
+    google.script.run.withSuccessHandler(function(url) {
+      window.open(url + "?page=login", "_blank"); 
+    }).getScriptUrl();
+  };
+
+  window.startCore = function() {
+    startIdleTimer(); 
+
+    setInterval(function() {
+      var d = new Date();
+      document.getElementById("jam-v").innerText = d.toLocaleTimeString("id-ID", {hour12:false});
+      document.getElementById("tgl-v").innerText = d.toLocaleDateString("id-ID", {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+      
+      if (d.getDate() !== currentDay) { window.location.reload(); }
+    }, 1000);
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if(res && res.info) {
+          normalTickerText = res.info; 
+          if (navigator.onLine) {
+            document.getElementById("ticker-text-v").innerText = (normalTickerText + " • ").repeat(5);
+          }
+        }
+        if(res && res.nama) {
+          var brand = document.querySelector(".brand h1");
+          if(brand) brand.innerHTML = "SIPGTK <span style='font-size: clamp(10px, 1.2vw, 12px); display:block; color:#64748b; font-family:\"Plus Jakarta Sans\"'>Sistem Informasi Presensi <span>" + res.nama + "</span></span>";
+          
+          var saverSchoolName = document.getElementById("saver-school-name");
+          if (saverSchoolName) saverSchoolName.innerText = res.nama;
+        }
+      })
+      .withFailureHandler(function(err){ /* Supress error saat offline */ })
+      .getPresensiScannerSettings();
+
+    setInterval(function() {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if(res && res.mode){
+            var m = document.getElementById("mode-v");
+            // ===== FIX ERROR NULL INNERTEXT DI SINI =====
+            if (m) { 
+              m.innerText = res.mode;
+              if(res.mode.includes("MASUK"))      m.style.background = "#10b981";
+              else if(res.mode.includes("PULANG"))m.style.background = "#f59e0b";
+              else if(res.mode.includes("LEMBUR"))m.style.background = "#a855f7";
+              else if(res.mode.includes("TERLAMBAT")) m.style.background = "#ef4444";
+              else if(res.mode.includes("HADIR")) m.style.background = "#06b6d4";
+              else m.style.background = "#334155";
+            }
+            // ============================================
+          }
+        })
+        .withFailureHandler(function(err){ /* Supress error saat offline */ })
+        .getCurrentSessionMode();
+    }, 5000);
+
+    document.getElementById("scanner-input").addEventListener("keydown", function(e) {
+      if(e.key === "Enter") {
+        var val = e.target.value.trim();
+        e.target.value = "";
+        resetIdleTimer(); 
+        if(val.length > 3) window.executeScan(val);
+      }
+    });
+
+    window.refreshUI(); 
+    setInterval(function() { window.refreshUI(); }, 5000);
+  };
+
+  window.executeScan = function(nik) {
+    var now = Date.now();
+    if(nik === lastScanCode && (now - lastScanTime < 3000)) return; 
+    lastScanCode = nik;
+    lastScanTime = now;
+
+    if(isProcessing) return;
+    isProcessing = true;
+    
+    document.getElementById("quote-box-v").classList.add("hidden");
+    
+    playSFX('shutter');
+    var flashEl = document.getElementById("flash-v");
+    flashEl.classList.remove("do-flash"); 
+    void flashEl.offsetWidth; 
+    flashEl.classList.add("do-flash");
+
+    playSFX('processing');
+
+    var rb = document.getElementById("res-box-v");
+    rb.innerHTML = "<div style='display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%;'>" +
+                   "<div class='cyber-loader'></div>" +
+                   "<div class='loading-text'>MEMVERIFIKASI...</div>" +
+                   "</div>";
+    
+    var cvs = document.getElementById("canvas-v");
+    var video = document.getElementById("video-v");
+    var ctx = cvs.getContext("2d");
+    ctx.drawImage(video, 0, 0, 320, 240);
+    var photo = cvs.toDataURL("image/jpeg", 0.4);
+
+    if (!navigator.onLine) {
+      handleOfflineSave(nik, photo);
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        isProcessing = false;
+        var ucapan = "";
+
+        if (res && res.status === 'success') {
+          
+          // ============================================================
+          // ⚠️ KODE BYPASS TESTING (Hapus nanti jika server sudah siap) ⚠️
+          // Kode ini memaksa Kiosk mengira absen PERTAMA adalah Early Bird
+          if (window.gamiTested === undefined) {
+             res.is_early_bird = true; 
+             window.gamiTested = true;
+          }
+          // ============================================================
+
+          if (res.is_birthday) {
+            triggerGamification("🎂 SELAMAT ULANG TAHUN!", res.nama, res.foto, "Semoga panjang umur dan sehat selalu!");
+            speak("Selamat ulang tahun, " + res.nama.split(" ")[0] + ". Semoga harimu menyenangkan!");
+          } else if (res.is_early_bird) {
+            triggerGamification("🏆 EARLY BIRD HARI INI!", res.nama, res.foto, "Apresiasi untuk semangat pagi yang luar biasa!");
+            speak("Luar biasa! Kamu yang pertama datang hari ini, " + res.nama.split(" ")[0]);
+          } else {
+            playSFX('success'); 
+            ucapan = generateUcapanNatural(res.nama, res.mode, res.keterangan, 'success');
+            speak(ucapan);
+          }
+
+          rb.innerHTML = "<div style='color:var(--success); font-size:15px; font-weight:800; padding: 10px;'>✓ Berhasil: " + (res.nama || res.message) + "</div>";
+          setTimeout(function() { window.refreshUI(); }, 500);
+
+        } else if (res && res.status === 'duplikat') {
+          playSFX('error'); 
+          rb.innerHTML = "<div style='color:var(--warning); font-size:14px; font-weight:800; padding: 10px;'>⚠ " + (res.message || 'Anda sudah scan') + "</div>";
+          ucapan = generateUcapanNatural(res.nama, res.mode, res.keterangan, 'duplikat');
+          speak(ucapan);
+
+        } else {
+          playSFX('error'); 
+          rb.innerHTML = "<div style='color:var(--danger); font-size:14px; font-weight:800; padding: 10px;'>✗ " + (res ? (res.pesan || res.message) : 'Gagal memproses') + "</div>";
+          ucapan = generateUcapanNatural("", "", "", "error");
+          speak(ucapan);
+        }
+
+        setTimeout(function() { 
+          rb.innerHTML = defaultStatusHTML; 
+          document.getElementById("quote-box-v").classList.remove("hidden"); 
+        }, 3000);
+      })
+      .withFailureHandler(function(err) {
+        console.error("Presensi gagal terkirim:", err);
+        handleOfflineSave(nik, photo);
+      })
+      .simpanPresensi(nik, photo);
+  };
+
+  window.refreshUI = function() {
+    google.script.run
+      .withSuccessHandler(function(data) {
+        if(!data) return;
+        
+        var currentCount = data.logs ? data.logs.length : 0;
+        var latestLogName = (data.logs && data.logs.length > 0 && data.logs[0].nama) ? data.logs[0].nama : "empty";
+        var latestLogTime = (data.logs && data.logs.length > 0 && data.logs[0].waktu) ? data.logs[0].waktu : "00:00";
+        
+        var currentSignature = currentCount + "_" + latestLogName + "_" + latestLogTime;
+
+        if (currentSignature === windowDataSignature) return; 
+        windowDataSignature = currentSignature;
+
+        var list = document.getElementById("list-v");
+        if (!list) return;
+        
+        list.innerHTML = "";
+        
+        if (data.logs && data.logs.length > 0) {
+          data.logs.forEach(function(log, index) {
+            var inisial = log.nama ? log.nama.charAt(0).toUpperCase() : "?";
+            var fallbackAvatar = "https://ui-avatars.com/api/?name=" + inisial + "&background=1e293b&color=fff&size=200";
+            
+            var img = fallbackAvatar;
+            if (log.foto && typeof log.foto === 'string' && log.foto.length > 10) {
+              img = log.foto;
+              if (img.includes("drive.google.com")) {
+                 var matchID = img.match(/[-\w]{25,}/);
+                 if (matchID) img = "https://drive.google.com/thumbnail?id=" + matchID[0];          
+              }
+            }
+
+            var teksWaktu = String(log.waktu);
+            var ambilJam = teksWaktu.match(/\d{2}:\d{2}(:\d{2})?/);
+            var waktuBersih = ambilJam ? ambilJam[0] : teksWaktu; 
+            
+            var badgeStyle = "background:rgba(255,255,255,0.05); color:#fff;";
+            var statusColor = "#94a3b8";
+            var status = log.mode ? log.mode.toLowerCase() : '';
+            
+            if (status === 'masuk') { 
+              badgeStyle = "background:rgba(16,185,129,0.15); color:#34d399; border: 1px solid rgba(16,185,129,0.2);"; 
+              statusColor = (log.keterangan !== 'Normal' && log.keterangan !== 'Tepat Waktu') ? "var(--danger)" : "var(--success)"; 
+            }
+            else if (status === 'pulang') { 
+              badgeStyle = "background:rgba(245,158,11,0.15); color:#fbbf24; border: 1px solid rgba(245,158,11,0.2);"; 
+              statusColor = (log.keterangan !== 'Normal' && log.keterangan !== 'Tepat Waktu') ? "var(--danger)" : "var(--success)"; 
+            }
+            else if (status === 'lembur') {
+              badgeStyle = "background:rgba(168,85,247,0.15); color:#c084fc; border: 1px solid rgba(168,85,247,0.2);";
+            }
+            else if (status === 'izin' || status === 'sakit') {
+              badgeStyle = "background:rgba(239,68,68,0.15); color:#f87171; border: 1px solid rgba(239,68,68,0.2);";
+            }
+
+            var cardHTML = "<div class='card-v' style='animation-delay: " + (index * 0.05) + "s'>" +
+              "<div class='card-img-box'>" +
+                "<img src='" + img + "' alt='User' onerror=\"this.onerror=null; this.src='" + fallbackAvatar + "';\">" +
+              "</div>" +
+              "<div class='card-body'>" +
+                "<div class='card-name'>" + log.nama + "</div>" +
+                "<div class='card-role'>" + log.jabatan + "</div>" +
+                "<div class='card-meta'>" +
+                  "<div style='display:flex; flex-direction:column;'>" +
+                    "<span class='card-time'>" + waktuBersih + "</span>" +
+                    "<span class='card-status-text' style='color:" + statusColor + "'>" + log.keterangan + "</span>" +
+                  "</div>" +
+                  "<span class='card-badge' style='" + badgeStyle + "'>" + log.mode + "</span>" +
+                "</div>" +
+              "</div>" +
+            "</div>";
+            list.insertAdjacentHTML('beforeend', cardHTML);
+          });
+
+          document.getElementById("total-count-v").innerText = data.logs.length + " REKAMAN";
+
+          if(data.stats) {
+            updateStatSmooth("s-masuk", data.stats.masuk);
+            updateStatSmooth("s-pulang", data.stats.pulang);
+            updateStatSmooth("s-izin", data.stats.izin);
+            updateStatSmooth("s-sakit", data.stats.sakit); 
+            updateStatSmooth("s-lembur", data.stats.lembur);
+          }
+          
+          if(data.first) {
+            var award = document.getElementById("award-v");
+            award.style.display = "flex";
+            document.getElementById("award-name").innerText = data.first.nama;
+            document.getElementById("award-img").src = (data.first.foto && data.first.foto.length > 50) ? data.first.foto : ("https://ui-avatars.com/api/?name=" + data.first.nama.charAt(0) + "&background=random&color=fff");
+          }
+        }
+      })
+      .withFailureHandler(function(err){ /* Supress error saat offline */ })
+      .getScannerData();
+  };
+
+  function updateStatSmooth(id, value) {
+    var el = document.getElementById(id);
+    if (el && el.innerText != value) {
+      el.style.transform = "scale(1.2)";
+      el.style.transition = "0.3s";
+      setTimeout(function() {
+        if (el) { // Tambahan aman
+          el.innerText = value || 0;
+          el.style.transform = "scale(1)";
+        }
+      }, 1500);
+    }
+  }
+  
+  // Mock API Testing Mode
+  if (typeof google === 'undefined') {
+    console.warn('Google Apps Script not loaded - running in standalone mode');
+    var mockScanCount = 0;
+    
+    window.google = {
+      script: {
+        run: {
+          withSuccessHandler: function(onSuccess) {
+            var runner = {
+              withFailureHandler: function(onFailure) { return runner; },
+              getPresensiScannerSettings: function() { onSuccess({ info: 'Testing Mode', nama: 'Kiosk Scanner' }); return runner; },
+              getScannerData: function() { onSuccess({ stats: { masuk: 0, pulang: 0, izin: 0, sakit: 0, lembur: 0 }, logs: [], first: null }); return runner; },
+              simpanPresensi: function() { 
+                mockScanCount++;
+                var isEarlyBird = (mockScanCount === 1); 
+                onSuccess({ 
+                  status: 'success', 
+                  message: 'Data Tersimpan', 
+                  nama: 'Bapak/Ibu Guru', 
+                  mode: 'Masuk', 
+                  keterangan: 'Tepat Waktu',
+                  is_early_bird: isEarlyBird 
+                }); 
+                return runner; 
+              },
+              getCurrentSessionMode: function() { onSuccess({mode: 'MASUK BERLANGSUNG'}); return runner; },
+              getScriptUrl: function() { onSuccess("https://script.google.com/macros/s/testing/exec"); return runner; }
+            };
+            return runner;
+          },
+          withFailureHandler: function(onFailure) {
+            var runner = {
+              withSuccessHandler: function(onSuccess) { return runner; },
+              getPresensiScannerSettings: function() { return runner; },
+              getScannerData: function() { return runner; },
+              simpanPresensi: function() { return runner; },
+              getCurrentSessionMode: function() { return runner; },
+              getScriptUrl: function() { return runner; }
+            };
+            return runner;
+          }
+        }
+      }
+    };
+  }
+</script>
