@@ -26,10 +26,26 @@ function model_getUserByHash(qrHash) {
   return null;
 }
 
+/**
+ * MODEL: Menyimpan Log Presensi dengan Format Murni Teks
+ */
 function model_saveLog(rowData) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName("PRESENSI") || ss.insertSheet("PRESENSI");
-  sheet.appendRow(rowData);
+  
+  // 1. Cari baris kosong berikutnya
+  const nextRow = sheet.getLastRow() + 1;
+  const numColumns = rowData.length;
+  
+  // 2. Tentukan jangkauan (range) sel tempat data akan masuk
+  const range = sheet.getRange(nextRow, 1, 1, numColumns);
+  
+  // 3. KUNCI UTAMA: Set format range tersebut menjadi Plain Text ("@") SEBELUM data masuk
+  range.setNumberFormat("@");
+  
+  // 4. Masukkan data menggunakan setValues (harus dalam bentuk array 2D)
+  // Semua data akan dipaksa mengikuti format teks yang sudah diset di atas
+  range.setValues([rowData]);
 }
 
 function model_getRawData() {
